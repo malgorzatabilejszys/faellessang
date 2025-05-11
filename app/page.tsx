@@ -1,51 +1,111 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
+import { Search, ArrowUpAZ } from "lucide-react"
+import type { Song } from "@/types/song"
 import songs from "@/data/songs.json"
 
-export default function SongPage({ params }: { params: { id: string } }) {
-  const router = useRouter()
-  const song = songs.find((s) => s.id === params.id)
+export default function Home() {
+  const [filteredSongs, setFilteredSongs] = useState<Song[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [letterFilter, setLetterFilter] = useState<string | null>(null)
+  const [numberFilter, setNumberFilter] = useState<string>("")
 
-  if (!song) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <Button variant="ghost" onClick={() => router.back()} className="mb-8">
-          <ArrowLeft className="mr-2" size={16} />
-          Tilbage
-        </Button>
-        <h1 className="text-2xl font-bold">Sang ikke fundet</h1>
-      </div>
-    )
-  }
+  // Generate alphabet for letter filtering
+  const alphabet = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i))
+
+  useEffect(() => {
+    let result = [...songs]
+
+    // Apply search filter
+    if (searchQuery) {
+      result = result.filter((song) => song.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    }
+
+    // Apply letter filter
+    if (letterFilter) {
+      result = result.filter((song) => song.title.charAt(0).toUpperCase() === letterFilter)
+    }
+
+    // Apply number filter
+    if (numberFilter) {
+      result = result.filter((song) => song.number.toString().startsWith(numberFilter))
+    }
+
+    setFilteredSongs(result)
+  }, [searchQuery, letterFilter, numberFilter])
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Button variant="ghost" onClick={() => router.back()} className="mb-8">
-        <ArrowLeft className="mr-2" size={16} />
-        Tilbage
-      </Button>
+    <main className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8 text-center">Højskolesangbogen</h1>
 
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-6">
-          <span className="text-gray-500 text-lg">#{song.number}</span>
-          <h1 className="text-3xl font-bold">{song.title}</h1>
-          {song.author && <p className="text-gray-600">Af {song.author}</p>}
-          {song.composer && <p className="text-gray-600">Musik: {song.composer}</p>}
+      {/* Search and filters */}
+      <div className="mb-8 space-y-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Input
+            type="text"
+            placeholder="Søg efter sangtitel..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
 
-        {song.lyrics && (
-          <div className="prose max-w-none">
-            {song.lyrics.split("\n\n").map((verse, i) => (
-              <p key={i} className="whitespace-pre-line mb-6">
-                {verse}
-              </p>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-2 items-center">
+          <ArrowUpAZ className="mr-1" size={18} />
+          <Button
+            variant={letterFilter === null ? "default" : "outline"}
+            size="sm"
+            onClick={() => setLetterFilter(null)}
+          >
+            Alle
+          </Button>
+          {alphabet.map((letter) => (
+            <Button
+              key={letter}
+              variant={letterFilter === letter ? "default" : "outline"}
+              size="sm"
+              onClick={() => setLetterFilter(letter)}
+            >
+              {letter}
+            </Button>
+          ))}
+        </div>
+
+        <div>
+          <Input
+            type="number"
+            placeholder="Filtrér efter nummer..."
+            value={numberFilter}
+            onChange={(e) => setNumberFilter(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
+      </div>
+
+      {/* Song list */}
+      <div className="space-y-2">
+        {filteredSongs.length > 0 ? (
+          filteredSongs.map((song) => (
+            <Link
+              key={song.id}
+              href={`/song/${song.id}`}
+              className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center">
+                <span className="font-mono text-gray-500 w-12">{song.number}</span>
+                <span className="font-medium">{song.title}</span>
+              </div>
+            </Link>
+          ))
+        ) : (
+          <p className="text-center text-gray-500 py-8">Ingen sange fundet</p>
         )}
       </div>
-    </div>
+    </main>
   )
 }
