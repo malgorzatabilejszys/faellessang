@@ -4,12 +4,22 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, ArrowUpAZ } from "lucide-react"
-import type { Song } from "@/types/song"
+import { Search, ArrowUpAZ } from 'lucide-react'
 import songs from "@/data/songs.json"
 
+// Define a more permissive type that matches your actual data
+type SongData = {
+  id: string;
+  number: number;
+  title: string;
+  lyrics: string;
+  [key: string]: any; // This allows any additional properties
+};
+
 export default function Home() {
-  const [filteredSongs, setFilteredSongs] = useState<Song[]>([])
+  // Use type assertion to tell TypeScript what the actual shape is
+  const typedSongs = songs as SongData[];
+  const [filteredSongs, setFilteredSongs] = useState<SongData[]>(typedSongs)
   const [searchQuery, setSearchQuery] = useState("")
   const [letterFilter, setLetterFilter] = useState<string | null>(null)
   const [numberFilter, setNumberFilter] = useState<string>("")
@@ -18,7 +28,7 @@ export default function Home() {
   const alphabet = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i))
 
   useEffect(() => {
-    let result = [...songs]
+    let result = [...typedSongs]
 
     // Apply search filter
     if (searchQuery) {
@@ -36,7 +46,7 @@ export default function Home() {
     }
 
     setFilteredSongs(result)
-  }, [searchQuery, letterFilter, numberFilter])
+  }, [searchQuery, letterFilter, numberFilter, typedSongs])
 
   return (
     <main className="container mx-auto px-4 py-8">
